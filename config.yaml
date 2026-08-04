@@ -1,0 +1,162 @@
+# =============================================================================
+# MetalMotifExtractor — Configuration File
+# =============================================================================
+# All parameters can be overridden via CLI flags.  Values set here act as
+# defaults when the corresponding flag is not supplied on the command line.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Metal ion(s) of interest
+# Use the residue name(s) exactly as they appear in PDB HETATM records.
+# A single value or a YAML list is accepted.
+#
+# Single metal:          metal: "CA"
+# Multiple metals:       metal: ["CA", "MG"]
+# ALL metals (any form): metal: "any"
+#
+# Using "any" disables the per-structure metal presence filter at the
+# discovery stage and searches every downloaded structure for all known
+# biologically relevant metal ions. This is the correct setting when using
+# --mode uniprot and you want ALL crystal forms of EF-hand proteins
+# regardless of which metal they contain (Ca2+, Mg2+, La3+, apo, etc.).
+# ---------------------------------------------------------------------------
+metal: "any"
+
+# ---------------------------------------------------------------------------
+# Input mode
+# Options:
+#   "excel"   — read PDB IDs from an Excel (.xlsx) file
+#   "text"    — read PDB IDs from a plain-text file (one ID per line)
+#   "uniprot" — automatically discover protein structures via the UniProt
+#               REST API using a configurable domain query. Default query
+#               targets EF-hand proteins; change uniprot_query below to
+#               target any other protein family with Swiss-Prot annotations.
+# ---------------------------------------------------------------------------
+input_mode: "uniprot"
+
+# Path to input file (used only for modes "excel" and "text")
+input_file: "input.xlsx"
+
+# ---------------------------------------------------------------------------
+# Resolution filter (Å)
+# Only X-ray / cryo-EM structures with resolution ≤ this value are kept.
+# NMR structures lack a numeric resolution; they are excluded by default
+# unless include_nmr: true is set.
+# ---------------------------------------------------------------------------
+max_resolution: 2.0
+include_nmr: false
+
+# ---------------------------------------------------------------------------
+# Allowed experimental methods
+# Only structures obtained by one of the listed methods are processed.
+# ---------------------------------------------------------------------------
+allowed_methods:
+  - "X-RAY DIFFRACTION"
+  # - "ELECTRON MICROSCOPY"
+
+# ---------------------------------------------------------------------------
+# Motif extraction parameters
+# ---------------------------------------------------------------------------
+distance_cutoff: 4.0      # Å — residues within this distance of the ion are
+                           # considered "binding residues"
+motif_length: 15          # number of residues in the extracted window
+                           # (odd values recommended so the window is symmetric)
+
+# ---------------------------------------------------------------------------
+# Biological assembly vs. asymmetric unit
+# true  → download the deposited biological assembly (assembly 1)
+# false → use the asymmetric unit (default PDB file)
+# ---------------------------------------------------------------------------
+use_biological_assembly: false
+
+# ---------------------------------------------------------------------------
+# Parallel download settings
+# max_workers: number of simultaneous download threads
+# ---------------------------------------------------------------------------
+max_workers: 8
+
+# ---------------------------------------------------------------------------
+# SSL certificate verification
+#
+# Set to false if you are behind an institutional VPN, university proxy,
+# or corporate firewall that performs SSL inspection. These systems
+# intercept HTTPS traffic and present their own certificate, which causes
+# "certificate verify failed: Hostname mismatch" errors.
+#
+# Symptom: SSLError / CERTIFICATE_VERIFY_FAILED in the log.
+# Fix:     ssl_verify: false
+#
+# You can also pass --no_ssl_verify on the command line.
+# ---------------------------------------------------------------------------
+ssl_verify: false   # Set to false for institutional networks with SSL inspection (IIT)
+
+# ---------------------------------------------------------------------------
+# UniProt discovery query (used only for --mode uniprot)
+#
+# This is the query sent to the UniProt REST API to discover protein
+# structures.  Change this to target any protein family that has curated
+# domain annotations in Swiss-Prot.
+#
+# The query must be a valid UniProt REST API query string.
+# See: https://www.uniprot.org/help/query-fields
+#
+# Examples:
+#   EF-hand (Ca2+, default):
+#     uniprot_query: '(ft_domain:"EF-hand") AND (reviewed:true)'
+#
+#   C2H2 zinc finger:
+#     uniprot_query: '(ft_domain:"Zinc finger, C2H2-type") AND (reviewed:true)'
+#
+#   RING finger (E3 ligase, Zn2+):
+#     uniprot_query: '(ft_domain:"RING-type zinc finger") AND (reviewed:true)'
+#
+#   LIM domain (Zn2+):
+#     uniprot_query: '(ft_domain:"LIM zinc-binding") AND (reviewed:true)'
+#
+#   PHD finger (chromatin reader, Zn2+):
+#     uniprot_query: '(ft_domain:"PHD-type zinc finger") AND (reviewed:true)'
+#
+#   Rubredoxin (Fe2+):
+#     uniprot_query: '(ft_domain:"Rubredoxin-type") AND (reviewed:true)'
+#
+#   2Fe-2S ferredoxin:
+#     uniprot_query: '(ft_domain:"2Fe-2S ferredoxin-type") AND (reviewed:true)'
+#
+#   EGF-like calcium-binding:
+#     uniprot_query: '(ft_domain:"EGF-like calcium-binding") AND (reviewed:true)'
+#
+#   FYVE zinc finger:
+#     uniprot_query: '(ft_domain:"Zinc finger, FYVE-type") AND (reviewed:true)'
+# ---------------------------------------------------------------------------
+uniprot_query: '(ft_domain:"EF-hand") AND (reviewed:true)'
+
+# ---------------------------------------------------------------------------
+# HTTP Proxy settings
+#
+# If the tool cannot reach external APIs (RCSB, UniProt) but your browser
+# can, your institution routes traffic through a proxy that Python does not
+# automatically detect.
+#
+# Find your proxy address from your browser:
+#   Chrome/Edge: Settings → System → Open proxy settings
+#   Firefox:     Settings → Network Settings → Manual proxy
+#   Or ask your IT helpdesk.
+#
+# Common IITGN proxy: http://fwg.iitgn.ac.in:80
+#
+# Examples:
+#   proxy: "http://proxy.iitgn.ac.in:8080"
+#   proxy: "http://fwg.iitgn.ac.in:80"
+#
+# Leave as empty string "" if no proxy is needed.
+# ---------------------------------------------------------------------------
+proxy: ""
+
+# ---------------------------------------------------------------------------
+# Output paths
+# ---------------------------------------------------------------------------
+output_dir: "outputs"
+pdb_dir: "pdb_files"
+motif_dir: "motif_pdbs"
+metadata_dir: "metadata"
+log_dir: "logs"
