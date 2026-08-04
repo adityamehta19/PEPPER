@@ -2,8 +2,7 @@
 
 A general-purpose tool for extracting experimentally
 verified metal-ion-binding structural motifs from RCSB Protein Data Bank
-structures. Designed primarily for EF-hand Ca²⁺-binding proteins but
-fully configurable for any metal-binding protein family with curated
+structures. The tool is fully configurable for any metal-binding protein family with curated
 UniProt Swiss-Prot domain annotations.
 
 ---
