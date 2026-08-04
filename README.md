@@ -158,11 +158,7 @@ python metal_motif_extractor.py --mode uniprot --metal ZN \
 ## UniProt Discovery Workflow (Mode C — `--mode uniprot`)
 
 The `--mode uniprot` option automatically discovers protein structures
-using the UniProt REST API. Note: despite the historical name `interpro`
-appearing in some internal references, **InterPro is never contacted** —
-all discovery calls go to `rest.uniprot.org`.
-
-The workflow has three steps:
+using the UniProt REST API. 
 
 Check out our publication for the complete workflow.
 
