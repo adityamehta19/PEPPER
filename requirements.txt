@@ -1,7 +1,0 @@
-biopython>=1.81
-pandas>=2.0
-numpy>=1.24
-scipy>=1.10
-requests>=2.31
-PyYAML>=6.0
-openpyxl>=3.1
