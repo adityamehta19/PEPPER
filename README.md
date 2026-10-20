@@ -1,6 +1,6 @@
 # PEPPER - PEPtide Pocket Extractor of Residues around metals
 
-Extracts metal-ion-binding structural motifs (e.g. EF-hand Ca²⁺ loops) from
+Extracts metal-ion-binding structural windows (e.g. EF-hand Ca²⁺ loops) from
 RCSB PDB structures: discovers candidate structures, filters them by
 experimental quality, downloads coordinate files, and extracts fixed-length
 sequence windows around metal coordination sites, together with the water
@@ -8,8 +8,7 @@ molecules coordinated to each ion.  Output: per-motif PDB files and
 analysis-ready CSV tables.
 
 > **Terminology.** The extracted object is a *sequence window* around the
-> protein ligands of one ion (see *Algorithm notes*). It is not necessarily
-> the complete coordination site.
+> protein ligands of one ion (see *Algorithm notes*).
 
 ---
 
@@ -124,17 +123,6 @@ What the tool does with your choice:
    coordination numbers with the highest value each metal can have**. If sites
    exceed it, it says so, for example:
 
-```
-Distance cut-offs used (A)   : protein 4.0, water 4.0, ligand 4.0
-Coordination number check (is the cut-off too high for the metal?):
-  MG   sites    210 | limit  6 | above limit 31 (14.8%) | highest CN  9 | TOO HIGH
-       CN distribution: 4:3 5:20 6:156 7:24 8:5 9:2
-  *** WARNING: the distance cut-off (4.0 A) is too high for the coordination
-  physically possible for MG: 31 of 210 sites (14.8%) have more than 6 donor
-  atoms (highest 9). Lower --distance (or set --metal_cutoff MG=<smaller value>;
-  also check --water_cutoff and --ligand_cutoff) and run again.
-```
-
 
 ## Coordinated water
 
@@ -143,10 +131,7 @@ For every extracted motif:
 1. All water molecules of the same model are collected (from **all** chains;
    deposited waters often carry a different chain ID from the protein).
 2. A water is *coordinated* if its **oxygen** is within `water_cutoff`
-   (default: the same as `--distance`) of the metal. This is a separate parameter from
-   `distance_cutoff` (protein donors) because metal–water bonds are
-   typically 2.0–2.6 Å and a 4 Å cutoff would also collect second-shell
-   waters.
+   (default: the same as `--distance`) of the metal.
 3. The count, identifiers and distances go to `motif_metadata.csv`
    (`Water Count`, `Water IDs`, `Water Distances (A)`, `Water Cutoff (A)`),
    and every coordinated water (all atoms, original coordinates and chain
@@ -299,17 +284,6 @@ Length distribution:
        ...
 ```
 
-## Run time
-
-Donor atoms are found with a k-d tree built once per model, the motif files
-are written from small copies of the needed residues, and DSSP/STRIDE are run
-once per structure (not once per motif). On synthetic stress structures
-(`tools/stress_test.py`) the original code needed 43 s for 108 motifs and
-276 s for 216 motifs; the current code needs 0.6 s and 1.7 s, and 24 s for a
-60,000-atom complex with 1,350 ions. `structure_outcomes.csv` has an
-`Extraction Seconds` column and structures slower than 60 s are logged, so
-slow entries are easy to find.
-
 ## Per-metal cutoffs and site provenance
 
 `--metal_cutoff ZN=2.8 CA=3.2` (or `metal_cutoffs:` in `config.yaml`) overrides
@@ -335,23 +309,6 @@ python tools/compare_runs.py --a asu/metadata/motif_metadata.csv \
 It reports, per PDB ID, motifs, chains and ions in each run and which
 structures have fewer, the same, or more motifs. Fewer motifs in the assembly
 run usually means the asymmetric unit holds several copies of the assembly.
-
-## Checking PDB vs mmCIF handling
-
-Two different things get mixed up here, so test them separately:
-
-| Comparison | Same chains? | Expected |
-|---|---|---|
-| asymmetric unit as `.pdb` vs the same asymmetric unit as `.cif` (`--asu_format pdb` / `cif`) | yes | **identical** motifs |
-| asymmetric unit vs biological assembly (`--biological_assembly`) | **no** (assembly 1 can be fewer or more chains) | counts **differ** |
-
-```bash
-python metal_motif_extractor.py --metal CA --distance 3.0 ... --asu_format pdb --output_dir run_pdb ...
-python metal_motif_extractor.py --metal CA --distance 3.0 ... --asu_format cif --output_dir run_cif ...
-python tools/compare_runs.py --a run_pdb/metadata/motif_metadata.csv --b run_cif/metadata/motif_metadata.csv
-```
-Use separate output, motif and metadata folders for each run. Any structure
-that differs between the two formats points to a format-handling problem.
 
 ## UniProt queries (`--mode uniprot`)
 
@@ -437,13 +394,10 @@ SS Sequence, Helix/Strand/Coil Fraction.
 | `--no_water` | Do not search for coordinated water |
 | `--ligand_cutoff` | Metal…N/O/S cutoff (Å) for non-protein ligands; default: same as `--distance` |
 | `--no_ligands` | Do not search for non-protein ligands |
-| `--write_findgeo_input`, `--findgeo_dir` | Write the metal + counted donor atoms of every motif as a PDB for FindGeo (default dir `findgeo_inputs`) |
-| `--geometry_max_rmsd` | Optional: label sites whose best geometry fit has RMSD above this (Å) "Irregular" |
 | `--model {all,first}` | Which model(s) of multi-model files to use (default `all`) |
 | `--first_model_only` | Shortcut for `--model first` |
 | `--motif_length` | Window length (residues) |
 | `--biological_assembly` | Use assembly 1 (mmCIF) |
-| `--asu_format {pdb,cif}` | File format of the asymmetric unit (default `pdb`) |
 | `--resolution`, `--include_nmr`, `--methods` | Structure filtering |
 | `--workers`, `--proxy`, `--no_ssl_verify` | Performance / network |
 | `--config`, `--output_dir`, `--pdb_dir`, `--motif_dir`, `--metadata_dir`, `--log_dir` | Paths |
@@ -465,11 +419,6 @@ only that chain's protein donors (the water count is per ion).
 
 ## Limitations
 
-- Only the asymmetric unit is searched unless `--biological_assembly` is
-  used; ligands from symmetry mates are otherwise missed.
-- Waters and ligands that are not modelled in the deposited structure cannot
-  be counted. Ligand donor atoms are limited to N, O and S (halides and
-  other donors are not counted).
 - The tool operates on deposited coordinates and therefore inherits the source metal assignments and associated issues such as misidentified or poorly modeled metal ions in the PDB.
 - Geometry is limited to the template library. 
 - Records are per protein chain: protein donors of the same ion in other
@@ -492,13 +441,5 @@ only that chain's protein donors (the water count is per ion).
 
 RCSB Search/Data/File APIs (search.rcsb.org, data.rcsb.org, files.rcsb.org),
 UniProt REST API (rest.uniprot.org), Biopython `Bio.PDB`.
-
-## Citation
-
-Berman, H.M. et al. "The Protein Data Bank." *Nucleic Acids Research*, 2000.
-The UniProt Consortium. "UniProt: the Universal Protein Knowledgebase."
-*Nucleic Acids Research*, 2023.
-
-## License
 
 Specify your project's license here.
