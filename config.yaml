@@ -180,7 +180,7 @@ max_workers: 8
 #
 # You can also pass --no_ssl_verify on the command line.
 # ---------------------------------------------------------------------------
-ssl_verify: false   # Set to false for institutional networks with SSL inspection (IIT)
+ssl_verify: true   # Set to false for institutional networks with SSL inspection (IIT)
 
 # ---------------------------------------------------------------------------
 # UniProt discovery query (used only for --mode uniprot)
